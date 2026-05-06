@@ -16,7 +16,21 @@ from crontab_audit.command_stats import build_command_stats
 
 
 def _collect_entries(path: str):
+    """Load crontab entries from a file or directory.
+
+    Args:
+        path: Path to a crontab file or a directory containing crontab files.
+
+    Returns:
+        A flat list of all CrontabEntry objects found.
+
+    Raises:
+        SystemExit: If the path does not exist.
+    """
     p = Path(path)
+    if not p.exists():
+        print(f"error: path does not exist: {path}", file=sys.stderr)
+        sys.exit(1)
     hosts = []
     if p.is_dir():
         hosts = load_from_directory(str(p))
