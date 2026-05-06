@@ -92,8 +92,16 @@ def test_compare_no_changes_same_entries():
     assert not report.has_changes
 
 
-def test_save_baseline_calls_save_snapshot():
-    hosts = [make_host("host1")]
-    with patch("crontab_audit.baseline.save_snapshot") as mock_save:
-        save_baseline(hosts, "/some/path.json")
-        mock_save.assert_called_once_with(hosts, "/some/path.json")
+def test_save_baseline_writes_json(tmp_path):
+    """Test that save_baseline serializes host crontabs to JSON correctly."""
+    output_file = tmp_path / "baseline.json"
+    entry = make_entry(minute="30", hour="2", command="/bin/cleanup", hostname="host1")
+    hosts = [make_host("host1", entries=[entry])]
+
+    save_baseline(hosts, str(output_file))
+
+    assert output_file.exists()
+    data = json.loads(output_file.read_text())
+    assert isinstance(data, list)
+    assert len(data) == 1
+    assert data[0]["hostname"] == "host1"
