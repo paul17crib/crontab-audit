@@ -41,6 +41,10 @@ def load_from_file(filepath: str, hostname: Optional[str] = None) -> HostCrontab
     """Read a crontab file and return a HostCrontab.
 
     If *hostname* is not provided the base filename (without extension) is used.
+
+    Raises:
+        FileNotFoundError: If *filepath* does not exist.
+        OSError: If the file cannot be read.
     """
     if hostname is None:
         hostname = os.path.splitext(os.path.basename(filepath))[0]
@@ -53,7 +57,12 @@ def load_from_directory(directory: str) -> Dict[str, HostCrontab]:
     """Load all *.crontab or *.txt files in *directory*.
 
     Returns a mapping of hostname -> HostCrontab.
+
+    Raises:
+        NotADirectoryError: If *directory* is not a valid directory path.
     """
+    if not os.path.isdir(directory):
+        raise NotADirectoryError(f"{directory!r} is not a directory")
     results: Dict[str, HostCrontab] = {}
     for filename in sorted(os.listdir(directory)):
         if filename.endswith((".crontab", ".txt")):
