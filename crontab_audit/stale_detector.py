@@ -59,6 +59,16 @@ def _comment_suggests_stale(comment: str) -> List[str]:
     return [p for p in STALE_COMMENT_PATTERNS if p in lower]
 
 
+def _extract_inline_comment(command: str) -> str:
+    """Extract the inline comment portion of a command string, if present.
+
+    Returns the text after the first '#' character, stripped of leading and
+    trailing whitespace.  Returns an empty string if no comment is found.
+    """
+    _, found, inline = command.partition("#")
+    return inline.strip() if found else ""
+
+
 def find_stale_entries(entries: List[CrontabEntry]) -> List[StalenessIssue]:
     """Scan entries for signs of staleness and return a list of issues."""
     issues: List[StalenessIssue] = []
@@ -77,9 +87,9 @@ def find_stale_entries(entries: List[CrontabEntry]) -> List[StalenessIssue]:
             continue
 
         # Check inline comment if present (e.g. command # deprecated)
-        if "#" in command:
-            _, _, inline = command.partition("#")
-            matched_comments = _comment_suggests_stale(inline.strip())
+        inline = _extract_inline_comment(command)
+        if inline:
+            matched_comments = _comment_suggests_stale(inline)
             if matched_comments:
                 issues.append(StalenessIssue(
                     entry=entry,
