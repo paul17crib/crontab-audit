@@ -58,6 +58,13 @@ class HostLoadReport:
     def total_runs_per_day(self) -> float:
         return sum(e.runs_per_day for e in self.estimates)
 
+    def summary_by_frequency(self) -> Dict[str, int]:
+        """Return a count of entries grouped by their frequency label."""
+        counts: Dict[str, int] = {}
+        for estimate in self.estimates:
+            counts[estimate.frequency_label] = counts.get(estimate.frequency_label, 0) + 1
+        return counts
+
     def __str__(self) -> str:
         return (
             f"Host: {self.hostname} | "
