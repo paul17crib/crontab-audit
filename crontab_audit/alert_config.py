@@ -27,9 +27,16 @@ class AlertConfig:
 
 DEFAULT_CONFIG = AlertConfig()
 
+VALID_LEVELS = ("info", "warning", "critical")
+
 
 def from_dict(data: dict) -> AlertConfig:
-    """Build an AlertConfig from a plain dictionary (e.g. loaded from JSON/YAML)."""
+    """Build an AlertConfig from a plain dictionary (e.g. loaded from JSON/YAML).
+
+    Unknown keys in *data* are silently ignored. Invalid values for
+    ``min_level`` raise a ``ValueError`` so callers get clear feedback
+    instead of the bad value being silently discarded.
+    """
     cfg = AlertConfig()
     if "notify_on_risk" in data:
         cfg.notify_on_risk = bool(data["notify_on_risk"])
@@ -40,8 +47,12 @@ def from_dict(data: dict) -> AlertConfig:
     if "critical_commands" in data:
         cfg.critical_commands = list(data["critical_commands"])
     if "min_level" in data:
-        if data["min_level"] in ("info", "warning", "critical"):
-            cfg.min_level = data["min_level"]
+        if data["min_level"] not in VALID_LEVELS:
+            raise ValueError(
+                f"Invalid min_level {data['min_level']!r}. "
+                f"Must be one of {VALID_LEVELS}."
+            )
+        cfg.min_level = data["min_level"]
     if "max_notifications" in data:
         cfg.max_notifications = int(data["max_notifications"])
     return cfg
