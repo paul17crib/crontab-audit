@@ -61,3 +61,26 @@ def filter_lines(lines: List[str], keyword: str, case_sensitive: bool = False) -
         keyword = keyword.lower()
         return [l for l in lines if keyword in l.lower()]
     return [l for l in lines if keyword in l]
+
+
+def summarize(lines: List[str], max_lines: int = 10) -> str:
+    """Return a brief summary of lines, showing the first few and a count of the rest.
+
+    Useful for embedding a compact overview of a large report section in emails
+    or log output without overwhelming the reader.
+
+    Args:
+        lines: The full list of output lines to summarize.
+        max_lines: Maximum number of lines to include before summarizing the rest.
+
+    Returns:
+        A single string with up to max_lines lines followed by a remainder note.
+    """
+    if max_lines < 1:
+        raise ValueError("max_lines must be at least 1")
+    if len(lines) <= max_lines:
+        return "\n".join(lines)
+    shown = lines[:max_lines]
+    remaining = len(lines) - max_lines
+    shown.append(f"... and {remaining} more line{'s' if remaining != 1 else ''}.")
+    return "\n".join(shown)
