@@ -5,6 +5,7 @@ from crontab_audit.runtime_estimator import HostLoadReport, EntryLoadEstimate, t
 
 
 def format_entry_estimate(est: EntryLoadEstimate) -> str:
+    """Format a single entry load estimate as a human-readable string."""
     return (
         f"  [{est.frequency_label:10s}] "
         f"{est.runs_per_day:7.1f} runs/day  "
@@ -14,6 +15,7 @@ def format_entry_estimate(est: EntryLoadEstimate) -> str:
 
 
 def format_host_load(report: HostLoadReport, top_n: int = 0) -> str:
+    """Format a full host load report, optionally limiting to the top_n heaviest entries."""
     lines = [f"=== {report.hostname} ==="]
     lines.append(
         f"  Total: {len(report.estimates)} entries, "
@@ -30,12 +32,14 @@ def format_host_load(report: HostLoadReport, top_n: int = 0) -> str:
 
 
 def format_all_hosts_load(reports: List[HostLoadReport], top_n: int = 0) -> str:
+    """Format load reports for all hosts, optionally limiting to top_n entries per host."""
     if not reports:
         return "No host load data available."
     return "\n\n".join(format_host_load(r, top_n=top_n) for r in reports)
 
 
 def format_load_summary(reports: List[HostLoadReport]) -> str:
+    """Format a concise summary table across all hosts, sorted by estimated load."""
     if not reports:
         return "No hosts to summarise."
     lines = ["Runtime Load Summary", "=" * 40]
@@ -52,4 +56,31 @@ def format_load_summary(reports: List[HostLoadReport]) -> str:
     lines.append("  " + "-" * 55)
     for r in sorted_reports:
         lines.append(f"  {r.hostname:<30} {r.total_runs_per_day:>10.1f} {r.total_seconds_per_day:>12.1f}")
+    return "\n".join(lines)
+
+
+def format_top_entries_across_hosts(reports: List[HostLoadReport], top_n: int = 10) -> str:
+    """Format a ranked list of the heaviest individual entries across all hosts.
+
+    Useful for identifying the single most expensive cron jobs regardless of host.
+    """
+    if not reports:
+        return "No host load data available."
+    all_estimates = [
+        (r.hostname, est)
+        for r in reports
+        for est in r.estimates
+    ]
+    all_estimates.sort(key=lambda x: x[1].total_seconds_per_day, reverse=True)
+    top = all_estimates[:top_n]
+    lines = [f"Top {top_n} heaviest entries across all hosts"]
+    lines.append(f"  {'Host':<20} {'Frequency':<10}  {'Runs/Day':>9}  {'Load(s/day)':>11}  Command")
+    lines.append("  " + "-" * 75)
+    for hostname, est in top:
+        lines.append(
+            f"  {hostname:<20} [{est.frequency_label:10s}] "
+            f"{est.runs_per_day:7.1f} runs/day  "
+            f"{est.total_seconds_per_day:8.1f}s/day  "
+            f"{est.entry.command}"
+        )
     return "\n".join(lines)
