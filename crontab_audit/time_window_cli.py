@@ -24,7 +24,21 @@ _BUILTIN_WINDOWS = {
 
 
 def _collect_entries(path: str) -> List[CrontabEntry]:
+    """Load crontab entries from a file or directory.
+
+    Args:
+        path: Path to a single crontab file or a directory containing
+              multiple crontab files.
+
+    Returns:
+        A flat list of all CrontabEntry objects found.
+
+    Raises:
+        FileNotFoundError: If *path* does not exist.
+    """
     p = Path(path)
+    if not p.exists():
+        raise FileNotFoundError(f"Path not found: {path}")
     if p.is_dir():
         hosts = load_from_directory(str(p))
     else:
@@ -33,7 +47,17 @@ def _collect_entries(path: str) -> List[CrontabEntry]:
 
 
 def cmd_check(args: argparse.Namespace) -> int:
-    entries = _collect_entries(args.path)
+    """Execute the check sub-command.
+
+    Returns:
+        1 if any window matches were found, 0 otherwise.
+    """
+    try:
+        entries = _collect_entries(args.path)
+    except FileNotFoundError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
     windows: List[TimeWindow] = [_BUILTIN_WINDOWS[w] for w in args.windows]
     matches = find_window_matches(entries, windows)
 
